@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上下ルビ組版ツール</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;500;600;700;900&family=Noto+Serif+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <datalist id="font-presets"></datalist>
+
+    <div class="app-container">
+        <!-- Preview Panel (Left) -->
+        <main class="preview-panel">
+            <div class="preview-wrapper">
+                <div id="canvas-area" class="canvas-area" style="width: 1920px; height: 1080px; background-color: #cc0000;">
+                    <div id="main-content" class="main-content">
+                        <!-- Text blocks will be rendered here -->
+                    </div>
+                    <div id="translation-content" class="translation-content">
+                        <!-- Translation text will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Controls Panel (Right) -->
+        <aside class="controls-panel">
+            <div class="header-top">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>上下ルビ組版ツール</h2>
+                    <button id="export-png-btn" class="btn export small-btn">PNG出力</button>
+                </div>
+                <div class="header-actions">
+                    <button id="load-local-fonts-btn" class="btn small-btn">PCフォント読込</button>
+                    <button id="export-preset-btn" class="btn small-btn">設定を保存</button>
+                    <label class="btn small-btn" style="cursor: pointer; margin: 0;">
+                        読込
+                        <input type="file" id="import-preset-input" accept=".json" style="display: none;">
+                    </label>
+                </div>
+            </div>
+            
+            <div class="settings-scroll">
+                <div class="control-group">
+                    <h3>キャンバス設定</h3>
+                    <div class="inline-inputs">
+                        <label>背景色 <input type="color" id="bg-color" value="#cc0000"></label>
+                        <label>幅(px) <input type="number" id="canvas-width" value="1920"></label>
+                        <label>高(px) <input type="number" id="canvas-height" value="1080"></label>
+                    </div>
+                    <div class="inline-inputs">
+                        <label>本文の行間(px) <input type="number" id="line-spacing" value="20"></label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>本文 ＆ 上ルビ (漢字)</h3>
+                    <p class="help-text">書式: <code>{本文|上ルビ}</code></p>
+                    <label>テキスト
+                        <textarea id="main-text" rows="4">{전화|戰火}의 불길 헤쳐 {미제|米帝}를 쳐부시고
+{조국|祖國}의 {존엄|尊厳}을 지켜주신 {수령|首領}님
+{김일성대원수|金日成大元帥} {만만세|萬萬歲} {만세|萬歲} {만만세|萬萬歲}
+{인민|人民}은 {인사|(人事)}를 드린다 {영광|榮光}드린다</textarea>
+                    </label>
+                    
+                    <div class="settings-block">
+                        <h4>本文</h4>
+                        <div class="inline-inputs">
+                            <label>フォント <input type="text" id="main-font" list="font-presets" value="'Noto Serif KR', serif" class="font-input"></label>
+                        </div>
+                        <div class="inline-inputs">
+                            <label>太さ <input type="number" id="main-weight" value="700" step="100" min="100" max="900"></label>
+                            <label>サイズ <input type="number" id="main-size" value="86"></label>
+                            <label>色 <input type="color" id="main-color" value="#ffffff"></label>
+                        </div>
+                        <div class="inline-inputs">
+                            <label>縁取り色 <input type="color" id="main-stroke-color" value="#000000"></label>
+                            <label>縁取り幅 <input type="number" id="main-stroke-width" value="5"></label>
+                        </div>
+                    </div>
+
+                    <div class="settings-block">
+                        <h4>上ルビ(漢字)</h4>
+                        <div class="inline-inputs">
+                            <label>フォント <input type="text" id="kanji-font" list="font-presets" value="'Noto Serif KR', serif" class="font-input"></label>
+                        </div>
+                        <div class="inline-inputs">
+                            <label>太さ <input type="number" id="kanji-weight" value="600" step="100" min="100" max="900"></label>
+                            <label>サイズ <input type="number" id="kanji-size" value="46"></label>
+                            <label>色 <input type="color" id="kanji-color" value="#ffff00"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>下ルビ (カナ)</h3>
+                    <label>テキスト (改行で本文と対応)
+                        <textarea id="kana-text" rows="4">チョナエ プㇽッキㇽ ヘチョ ミジェルㇽ チョブシゴ
+チョグゲ チョノムㇽ チキョジュシㇴ スリョンニㇺ
+キミㇽソンテウォㇴス マㇴマㇴセ マㇴセ マㇴマㇴセ
+イㇴミヌン イㇴサルㇽ トゥリㇴダ ヨンゴァントゥリㇴダ</textarea>
+                    </label>
+                    <div style="margin-top: 10px; margin-bottom: 5px;">
+                        <label style="display:flex; flex-direction:row; align-items:center; gap:5px; cursor:pointer;">
+                            <input type="checkbox" id="convert-small-nu" checked style="width:auto; margin:0;">
+                            「ㇴ」を「小さなン」に変換する
+                        </label>
+                    </div>
+                    <div class="settings-block">
+                        <h4>書式</h4>
+                        <div class="inline-inputs">
+                            <label>フォント <input type="text" id="kana-font" list="font-presets" value="'Noto Serif KR', serif" class="font-input"></label>
+                        </div>
+                        <div class="inline-inputs">
+                            <label>太さ <input type="number" id="kana-weight" value="500" step="100" min="100" max="900"></label>
+                            <label>サイズ <input type="number" id="kana-size" value="58"></label>
+                            <label>色 <input type="color" id="kana-color" value="#ffffff"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>翻訳テキスト (縦書き)</h3>
+                    <label>テキスト
+                        <textarea id="trans-text" rows="4">戦火の火の手を押し分けて
+米帝を打ち砕かれ
+祖国の尊厳を守ってくださった首領さま
+金日成大元帥万々歳 万歳 万々歳
+人民は挨拶を捧げる 栄光を捧げる</textarea>
+                    </label>
+                    <div class="settings-block">
+                        <h4>書式</h4>
+                        <div class="inline-inputs">
+                            <label>フォント <input type="text" id="trans-font" list="font-presets" value="'Noto Serif JP', serif" class="font-input"></label>
+                        </div>
+                        <div class="inline-inputs">
+                            <label>太さ <input type="number" id="trans-weight" value="500" step="100" min="100" max="900"></label>
+                            <label>サイズ <input type="number" id="trans-size" value="54"></label>
+                            <label>文字色 <input type="color" id="trans-color" value="#ffff00"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

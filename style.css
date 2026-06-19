@@ -1,0 +1,334 @@
+/* ==========================================
+ * Variables & Theme
+ * ========================================== */
+:root {
+    --bg-app: #f4f4f5;
+    --bg-panel: #ffffff;
+    --bg-input: #ffffff;
+    --border-color: #d4d4d8;
+    --text-main: #3f3f46;
+    --text-light: #18181b;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+}
+
+/* ==========================================
+ * Global Resets & Body
+ * ========================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    font-size: 13px;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ==========================================
+ * App Layout Containers
+ * ========================================== */
+.app-container {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+/* Preview Panel (Left Focus) */
+.preview-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e4e4e7;
+    position: relative;
+    overflow: hidden;
+}
+
+.preview-wrapper {
+    transform-origin: center center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+}
+
+.canvas-area {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+/* Controls Panel (Right Sidebar) */
+.controls-panel {
+    width: 440px;
+    background-color: var(--bg-panel);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -2px 0 15px rgba(0,0,0,0.03);
+    z-index: 10;
+}
+
+/* ==========================================
+ * UI Components (Headers, Inputs, Buttons)
+ * ========================================== */
+.header-top {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.header-top h2 {
+    font-size: 15px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.settings-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-panel);
+}
+::-webkit-scrollbar-thumb {
+    background: #d4d4d8;
+    border: 2px solid var(--bg-panel);
+    border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1aa;
+}
+
+.control-group {
+    margin-bottom: 25px;
+}
+
+.control-group h3 {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    font-weight: 600;
+    border-bottom: 1px solid #e4e4e7;
+    padding-bottom: 8px;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #71717a;
+    margin-bottom: 10px;
+}
+
+.help-text code {
+    color: #18181b;
+    background: #e4e4e7;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.settings-block {
+    margin-top: 12px;
+    background: #fafafa;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.settings-block h4 {
+    font-size: 12px;
+    margin-bottom: 10px;
+    color: #52525b;
+    font-weight: 600;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #52525b;
+}
+
+.inline-inputs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.inline-inputs:last-child {
+    margin-bottom: 0;
+}
+
+.inline-inputs > label {
+    flex: 1;
+    min-width: 0;
+}
+
+input[type="text"], input[type="number"], textarea, select {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 3px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
+    border-color: var(--accent);
+}
+
+input[type="color"] {
+    width: 100%;
+    height: 26px;
+    padding: 0;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.4;
+}
+
+/* Buttons */
+.btn {
+    background-color: #ffffff;
+    color: #3f3f46;
+    border: 1px solid #d4d4d8;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn:hover {
+    background-color: #f4f4f5;
+    color: #18181b;
+}
+
+.btn.export {
+    background-color: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    font-weight: 500;
+}
+
+.btn.export:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn.small-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+/* ==========================================
+ * Canvas Rendering Details (Text & Ruby)
+ * ========================================== */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 20px;
+}
+
+.line-container {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.rendered-line {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    white-space: pre;
+}
+
+.text-chunk {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ruby-top {
+    text-align: center;
+    white-space: pre;
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.main-text-part {
+    text-align: center;
+    white-space: pre;
+    line-height: 1;
+    position: relative;
+    -webkit-text-stroke: var(--stroke-width) var(--stroke-color);
+    paint-order: stroke fill;
+    filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5));
+}
+
+.kana-line {
+    text-align: left;
+    white-space: pre;
+    line-height: 1;
+    margin-top: 5px;
+}
+
+.small-n {
+    font-size: 0.75em;
+}
+
+.translation-content {
+    position: absolute;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    right: 20px;
+    top: 60px;
+}
+
+.translation-text-line {
+    white-space: pre-wrap;
+    line-height: 1.3;
+}
