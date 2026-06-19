@@ -262,15 +262,44 @@ class Renderer {
             this.mainContent.appendChild(container);
         });
 
-        // 3. Render Translation Text (Right-side Vertical)
-        const tLine = document.createElement('div');
-        tLine.className = 'translation-text-line';
-        tLine.textContent = s.trans.text;
-        tLine.style.fontFamily = s.trans.font;
-        tLine.style.fontWeight = s.trans.weight;
-        tLine.style.fontSize = s.trans.size + 'px';
-        tLine.style.color = s.trans.color;
-        this.translationContent.appendChild(tLine);
+        // 3. Render Translation Text (Right-side Vertical Manual Layout)
+        const transLines = s.trans.text.split('\n');
+        transLines.forEach(lineText => {
+            const lineCol = document.createElement('div');
+            lineCol.className = 'translation-text-line';
+            lineCol.style.fontFamily = s.trans.font;
+            lineCol.style.fontWeight = s.trans.weight;
+            lineCol.style.fontSize = s.trans.size + 'px';
+            lineCol.style.color = s.trans.color;
+
+            if (!lineText) {
+                lineCol.style.width = '1em'; // Space for empty lines
+            }
+
+            for (let char of lineText) {
+                const charEl = document.createElement('span');
+                charEl.className = 'vert-char';
+                
+                if (char === ' ' || char === '　') {
+                    charEl.style.height = '0.5em';
+                    lineCol.appendChild(charEl);
+                    continue;
+                }
+
+                charEl.textContent = char;
+
+                if (/[a-zA-Z0-9\-\~ー=〜]/.test(char)) {
+                    charEl.classList.add('vert-rotate');
+                } else if (char === '。' || char === '、' || char === '.' || char === ',') {
+                    charEl.classList.add('vert-punct');
+                } else if (['「', '」', '（', '）', '(', ')', '『', '』', '【', '】'].includes(char)) {
+                    charEl.classList.add('vert-rotate');
+                }
+
+                lineCol.appendChild(charEl);
+            }
+            this.translationContent.appendChild(lineCol);
+        });
         
         // 4. Scale preview to fit screen
         this.scaleToFit();

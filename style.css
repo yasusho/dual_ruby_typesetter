@@ -322,13 +322,29 @@ textarea {
 
 .translation-content {
     position: absolute;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
     right: 20px;
     top: 60px;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 0.4em; /* line spacing */
 }
 
 .translation-text-line {
-    white-space: pre-wrap;
-    line-height: 1.3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+
+.vert-char {
+    display: block;
+    line-height: 1.1;
+}
+
+.vert-rotate {
+    transform: rotate(90deg);
+}
+
+.vert-punct {
+    transform: translate(0.3em, -0.3em);
 }
