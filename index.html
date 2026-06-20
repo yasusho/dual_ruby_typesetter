@@ -6,6 +6,7 @@
     <title>上下ルビ組版ツール</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;500;600;700;900&family=Noto+Serif+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -30,12 +31,19 @@
         <aside class="controls-panel">
             <div class="header-top">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2>上下ルビ組版ツール</h2>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <h2>上下ルビ組版ツール</h2>
+                        <button id="help-btn" class="help-btn">?</button>
+                    </div>
                     <button id="export-png-btn" class="btn export small-btn">PNG出力</button>
                 </div>
                 <div class="header-actions">
                     <button id="load-local-fonts-btn" class="btn small-btn">PCフォント読込</button>
-                    <button id="export-preset-btn" class="btn small-btn">設定を保存</button>
+                    <label class="btn export small-btn" style="cursor: pointer; margin: 0; background-color: #10b981; border-color: #10b981;">
+                        CSV一括出力
+                        <input type="file" id="batch-csv-input" accept=".csv" style="display: none;">
+                    </label>
+                    <button id="export-preset-btn" class="btn small-btn">設定保存</button>
                     <label class="btn small-btn" style="cursor: pointer; margin: 0;">
                         読込
                         <input type="file" id="import-preset-input" accept=".json" style="display: none;">
@@ -146,6 +154,34 @@
             </div>
         </aside>
     </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>使い方 & CSV一括出力について</h3>
+                <button id="close-help-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>1. 基本の使い方</h4>
+                <p>各テキストエリアに文字を入力すると、左側のプレビューにリアルタイムで反映されます。<br>
+                本文の書き方: <code>{本文|上ルビ}</code> と記述することで、漢字の横に小さなルビを振ることができます。</p>
+                <hr>
+                <h4>2. CSV一括出力</h4>
+                <p>大量のデータを一度に画像化したい場合は、CSVファイルを作成して読み込ませることができます。</p>
+                <h5>CSVのフォーマットルール</h5>
+                <ul>
+                    <li>1列目：本文テキスト</li>
+                    <li>2列目：下ルビ（カナ）テキスト</li>
+                    <li>3列目：翻訳テキスト</li>
+                </ul>
+                <p>※見出し行（1行目）は自動的に無視されます。<br>
+                ※カンマ(,)区切りで作成してください。テキスト内に改行を含む場合は、セルをダブルクォーテーション(")で囲んでください（Excel等で保存すれば自動で処理されます）。</p>
+                <p>出力完了後、すべての画像が1つの <b>ZIPファイル</b> にまとめられてダウンロードされます。</p>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

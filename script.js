@@ -409,17 +409,24 @@ class Renderer {
 
 
 // ==========================================
-// 4. ExportManager: Handles PNG Generation
+// 4. ExportManager: Handles PNG and Batch Generation
 // ==========================================
 class ExportManager {
-    constructor(btnId) {
-        this.exportBtn = document.getElementById(btnId);
+    constructor(renderer, inputs) {
+        this.renderer = renderer;
+        this.inputs = inputs;
+        this.exportBtn = document.getElementById('export-png-btn');
+        this.batchInput = document.getElementById('batch-csv-input');
+        
         if (this.exportBtn) {
-            this.exportBtn.addEventListener('click', () => this.exportPNG());
+            this.exportBtn.addEventListener('click', () => this.exportSinglePNG());
+        }
+        if (this.batchInput) {
+            this.batchInput.addEventListener('change', (e) => this.handleBatchExport(e));
         }
     }
 
-    async exportPNG() {
+    async exportSinglePNG() {
         this.exportBtn.textContent = '保存中...';
         this.exportBtn.disabled = true;
 
@@ -428,24 +435,20 @@ class ExportManager {
         const bgColor = document.getElementById('bg-color').value;
 
         try {
-            // Temporarily disable scaling to ensure full 1:1 resolution export
             const originalTransform = wrapper.style.transform;
             wrapper.style.transform = 'scale(1)';
 
             const dataUrl = await htmlToImage.toPng(canvasArea, {
-                pixelRatio: 2, // High resolution output
+                pixelRatio: 2,
                 backgroundColor: bgColor
             });
 
-            // Trigger download
             const link = document.createElement('a');
             link.download = `typeset_${Date.now()}.png`;
             link.href = dataUrl;
             link.click();
 
-            // Restore scale
             wrapper.style.transform = originalTransform;
-
         } catch (error) {
             console.error('Export failed:', error);
             alert('保存に失敗しました。');
@@ -453,6 +456,181 @@ class ExportManager {
             this.exportBtn.textContent = 'PNG出力';
             this.exportBtn.disabled = false;
         }
+    }
+
+    async handleBatchExport(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            const text = evt.target.result;
+            const rows = this.parseCSV(text);
+            if (rows.length === 0) {
+                alert('CSVデータが空かフォーマットが不正です。');
+                return;
+            }
+
+            await this.processBatch(rows);
+            this.batchInput.value = ''; // reset
+        };
+        reader.readAsText(file);
+    }
+
+    parseCSV(text) {
+        const rows = [];
+        let currentRow = [];
+        let currentCell = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const nextChar = text[i + 1];
+
+            if (inQuotes) {
+                if (char === '"' && nextChar === '"') {
+                    currentCell += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = false;
+                } else {
+                    currentCell += char;
+                }
+            } else {
+                if (char === '"') {
+                    inQuotes = true;
+                } else if (char === ',') {
+                    currentRow.push(currentCell);
+                    currentCell = '';
+                } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+                    if (char === '\r') i++;
+                    currentRow.push(currentCell);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentCell = '';
+                } else {
+                    currentCell += char;
+                }
+            }
+        }
+        if (currentCell || currentRow.length > 0) {
+            currentRow.push(currentCell);
+            rows.push(currentRow);
+        }
+        return rows;
+    }
+
+    async processBatch(rows) {
+        if (!window.JSZip) {
+            alert('JSZipライブラリが読み込まれていません。');
+            return;
+        }
+
+        const zip = new JSZip();
+        const wrapper = document.querySelector('.preview-wrapper');
+        const canvasArea = document.getElementById('canvas-area');
+        const bgColor = document.getElementById('bg-color').value;
+
+        // Save current input state
+        const mainInput = document.getElementById('main-text');
+        const kanaInput = document.getElementById('kana-text');
+        const transInput = document.getElementById('trans-text');
+        
+        const originalMain = mainInput.value;
+        const originalKana = kanaInput.value;
+        const originalTrans = transInput.value;
+        const originalTransform = wrapper.style.transform;
+
+        wrapper.style.transform = 'scale(1)';
+
+        // Skip header if it looks like one (simple heuristic)
+        let startIndex = 0;
+        if (rows.length > 0 && rows[0].length >= 3 && rows[0][0].includes('本文')) {
+            startIndex = 1;
+        }
+
+        const total = rows.length - startIndex;
+        let count = 0;
+
+        const batchBtnLabel = this.batchInput.parentElement;
+        const origLabel = batchBtnLabel.innerHTML;
+
+        try {
+            for (let i = startIndex; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < 3 && !row.join('').trim()) continue; // skip empty rows
+
+                count++;
+                batchBtnLabel.textContent = `処理中... (${count}/${total})`;
+
+                // Set values
+                mainInput.value = row[0] || '';
+                kanaInput.value = row[1] || '';
+                transInput.value = row[2] || '';
+
+                // Update DOM
+                this.renderer.update();
+
+                // Wait for DOM to settle
+                await new Promise(r => setTimeout(r, 100));
+
+                const dataUrl = await htmlToImage.toPng(canvasArea, {
+                    pixelRatio: 2,
+                    backgroundColor: bgColor
+                });
+
+                // Convert dataUrl to blob data
+                const base64Data = dataUrl.replace(/^data:image\/(png|jpeg);base64,/, "");
+                zip.file(`typeset_${String(count).padStart(3, '0')}.png`, base64Data, {base64: true});
+            }
+
+            batchBtnLabel.textContent = 'ZIP圧縮中...';
+            const zipBlob = await zip.generateAsync({type: 'blob'});
+            
+            const link = document.createElement('a');
+            link.download = `typeset_batch_${Date.now()}.zip`;
+            link.href = URL.createObjectURL(zipBlob);
+            link.click();
+
+        } catch (error) {
+            console.error('Batch export failed:', error);
+            alert('一括出力中にエラーが発生しました。');
+        } finally {
+            // Restore state
+            mainInput.value = originalMain;
+            kanaInput.value = originalKana;
+            transInput.value = originalTrans;
+            this.renderer.update();
+            wrapper.style.transform = originalTransform;
+            batchBtnLabel.innerHTML = origLabel;
+        }
+    }
+}
+
+// ==========================================
+// 5. HelpManager: Handles Modal UI
+// ==========================================
+class HelpManager {
+    constructor() {
+        this.modal = document.getElementById('help-modal');
+        this.helpBtn = document.getElementById('help-btn');
+        this.closeBtn = document.getElementById('close-help-btn');
+
+        if (this.helpBtn && this.modal && this.closeBtn) {
+            this.helpBtn.addEventListener('click', () => this.open());
+            this.closeBtn.addEventListener('click', () => this.close());
+            this.modal.addEventListener('click', (e) => {
+                if (e.target === this.modal) this.close();
+            });
+        }
+    }
+
+    open() {
+        this.modal.style.display = 'flex';
+    }
+
+    close() {
+        this.modal.style.display = 'none';
     }
 }
 
@@ -469,7 +647,8 @@ class App {
         this.settings = new SettingsManager(this.allInputs);
         this.fonts = new FontManager('load-local-fonts-btn', 'font-presets');
         this.renderer = new Renderer();
-        this.exporter = new ExportManager('export-png-btn');
+        this.exporter = new ExportManager(this.renderer, this.allInputs);
+        this.help = new HelpManager();
 
         this.init();
     }
