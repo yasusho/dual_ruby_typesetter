@@ -336,7 +336,6 @@ textarea {
 .translation-text-line {
     white-space: nowrap; /* Keep single vertical line */
     line-height: 1.3;
-    margin-left: 0.4em; /* Line spacing */
 }
 
 /* ==========================================
