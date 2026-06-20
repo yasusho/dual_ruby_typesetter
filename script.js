@@ -262,7 +262,7 @@ class Renderer {
             this.mainContent.appendChild(container);
         });
 
-        // 3. Render Translation Text (Right-side Vertical Manual Layout)
+        // 3. Render Translation Text (Right-side Vertical Native Layout)
         const transLines = s.trans.text.split('\n');
         transLines.forEach(lineText => {
             const lineCol = document.createElement('div');
@@ -271,33 +271,8 @@ class Renderer {
             lineCol.style.fontWeight = s.trans.weight;
             lineCol.style.fontSize = s.trans.size + 'px';
             lineCol.style.color = s.trans.color;
+            lineCol.textContent = lineText || ' '; // Preserve empty lines using space
 
-            if (!lineText) {
-                lineCol.style.width = '1em'; // Space for empty lines
-            }
-
-            for (let char of lineText) {
-                const charEl = document.createElement('span');
-                charEl.className = 'vert-char';
-                
-                if (char === ' ' || char === '　') {
-                    charEl.style.height = '0.5em';
-                    lineCol.appendChild(charEl);
-                    continue;
-                }
-
-                charEl.textContent = char;
-
-                if (/[a-zA-Z0-9\-\~ー=〜]/.test(char)) {
-                    charEl.classList.add('vert-rotate');
-                } else if (char === '。' || char === '、' || char === '.' || char === ',') {
-                    charEl.classList.add('vert-punct');
-                } else if (['「', '」', '（', '）', '(', ')', '『', '』', '【', '】'].includes(char)) {
-                    charEl.classList.add('vert-rotate');
-                }
-
-                lineCol.appendChild(charEl);
-            }
             this.translationContent.appendChild(lineCol);
         });
         
@@ -457,17 +432,15 @@ class ExportManager {
             const originalTransform = wrapper.style.transform;
             wrapper.style.transform = 'scale(1)';
 
-            const canvas = await html2canvas(canvasArea, {
-                scale: 2, // High resolution output
-                backgroundColor: bgColor,
-                logging: false,
-                useCORS: true
+            const dataUrl = await htmlToImage.toPng(canvasArea, {
+                pixelRatio: 2, // High resolution output
+                backgroundColor: bgColor
             });
 
             // Trigger download
             const link = document.createElement('a');
             link.download = `typeset_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.href = dataUrl;
             link.click();
 
             // Restore scale
