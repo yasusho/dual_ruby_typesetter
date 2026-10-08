@@ -77,12 +77,18 @@ body {
  * UI Components (Headers, Inputs, Buttons)
  * ========================================== */
 .header-top {
-    padding: 15px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     background-color: #ffffff;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+}
+
+.header-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .header-top h2 {
@@ -91,10 +97,54 @@ body {
     font-weight: 600;
 }
 
-.header-actions {
+.action-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr 1fr;
+    gap: 6px;
+}
+
+.action-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 5px 6px;
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.action-card-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.02em;
+}
+
+.action-card .btn-group {
+    display: flex;
+    gap: 4px;
+}
+
+.action-card .btn-group .btn {
+    flex: 1;
+    padding: 4px 0;
+    font-size: 11px;
+    margin: 0;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn.export-csv {
+    background-color: #10b981;
+    color: #ffffff;
+    border-color: #10b981;
+    font-weight: 500;
+}
+
+.btn.export-csv:hover {
+    background-color: #059669;
+    color: #ffffff;
 }
 
 .settings-scroll {

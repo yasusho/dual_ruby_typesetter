@@ -84,6 +84,97 @@ class SettingsManager {
         };
         reader.readAsText(file);
     }
+
+    /** Export only text inputs as a JSON file */
+    exportText() {
+        const mainInput = document.getElementById('main-text');
+        const kanaInput = document.getElementById('kana-text');
+        const transInput = document.getElementById('trans-text');
+
+        const textData = {
+            version: 1,
+            savedAt: new Date().toISOString(),
+            mainText: mainInput ? mainInput.value : '',
+            kanaText: kanaInput ? kanaInput.value : '',
+            transText: transInput ? transInput.value : ''
+        };
+
+        const blob = new Blob([JSON.stringify(textData, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        link.download = `ruby_text_${dateStr}_${Date.now().toString().slice(-4)}.json`;
+        link.click();
+    }
+
+    /** Import text inputs from JSON, CSV, or text file */
+    importText(file, onComplete) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const content = evt.target.result;
+            const mainInput = document.getElementById('main-text');
+            const kanaInput = document.getElementById('kana-text');
+            const transInput = document.getElementById('trans-text');
+
+            let mainVal = null;
+            let kanaVal = null;
+            let transVal = null;
+
+            // 1. Try JSON
+            try {
+                const data = JSON.parse(content);
+                if (typeof data === 'object' && data !== null) {
+                    if (data.mainText !== undefined || data['main-text'] !== undefined || data.main !== undefined) {
+                        mainVal = data.mainText ?? data['main-text'] ?? data.main ?? '';
+                        kanaVal = data.kanaText ?? data['kana-text'] ?? data.kana ?? '';
+                        transVal = data.transText ?? data['trans-text'] ?? data.trans ?? '';
+                    }
+                }
+            } catch (e) {
+                // Not JSON, continue to CSV/Text parsing
+            }
+
+            // 2. Try CSV if not parsed yet
+            if (mainVal === null && (file.name.endsWith('.csv') || content.includes(','))) {
+                try {
+                    const rows = ExportManager.parseCSV(content);
+                    if (rows && rows.length > 0) {
+                        let targetRow = rows[0];
+                        if (rows.length > 1 && rows[0].length >= 1 && rows[0][0].includes('本文')) {
+                            targetRow = rows[1];
+                        }
+                        if (targetRow && targetRow.length > 0) {
+                            mainVal = targetRow[0] || '';
+                            kanaVal = targetRow[1] || '';
+                            transVal = targetRow[2] || '';
+                        }
+                    }
+                } catch (e) {
+                    // Not valid CSV
+                }
+            }
+
+            // 3. Fallback: separator "---" in text file
+            if (mainVal === null && content.includes('---')) {
+                const parts = content.split(/\n?---+\n?/);
+                if (parts.length >= 1) mainVal = parts[0].trim();
+                if (parts.length >= 2) kanaVal = parts[1].trim();
+                if (parts.length >= 3) transVal = parts[2].trim();
+            }
+
+            if (mainVal !== null) {
+                if (mainInput) mainInput.value = mainVal;
+                if (kanaInput) kanaInput.value = kanaVal !== null ? kanaVal : '';
+                if (transInput) transInput.value = transVal !== null ? transVal : '';
+                alert('テキストを読み込みました！');
+                if (onComplete) onComplete();
+            } else {
+                alert('テキストの読み込みに失敗しました。対応形式（JSON, CSV, または --- 区切りテキスト）であることを確認してください。');
+            }
+        };
+        reader.readAsText(file);
+    }
 }
 
 
@@ -189,6 +280,7 @@ class Renderer {
             },
             main: {
                 text: getVal('main-text'),
+                rubySyntax: document.getElementById('ruby-syntax') ? getVal('ruby-syntax') : 'curly',
                 font: getVal('main-font'),
                 weight: getVal('main-weight'),
                 size: getVal('main-size'),
@@ -243,7 +335,7 @@ class Renderer {
             container.className = 'line-container';
 
             // Main Text + Kanji Ruby
-            const rLine = this.parseAndRenderMainLine(mLine, s.main, s.kanji);
+            const rLine = this.parseAndRenderMainLine(mLine, s.main, s.kanji, s.main.rubySyntax);
             container.appendChild(rLine);
 
             // Kana Ruby (Bottom)
@@ -289,12 +381,14 @@ class Renderer {
         return safeText;
     }
 
-    /** Parses `{main|ruby}` syntax and constructs DOM elements */
-    parseAndRenderMainLine(lineStr, mainStyle, kanjiStyle) {
+    /** Parses ruby syntax (`{main|ruby}` or `|main<ruby>`) and constructs DOM elements */
+    parseAndRenderMainLine(lineStr, mainStyle, kanjiStyle, rubySyntax = 'curly') {
         const lineEl = document.createElement('div');
         lineEl.className = 'rendered-line';
 
-        const regex = /\{([^|{}]+)\|([^|{}]+)\}/g;
+        const regex = rubySyntax === 'pipe'
+            ? /[|｜]([^|<>\n《》＜＞]+)[<《＜]([^|<>\n《》＜＞]+)[>》＞]/g
+            : /\{([^|{}]+)\|([^|{}]+)\}/g;
         let lastIndex = 0;
         let match;
 
@@ -465,7 +559,7 @@ class ExportManager {
         const reader = new FileReader();
         reader.onload = async (evt) => {
             const text = evt.target.result;
-            const rows = this.parseCSV(text);
+            const rows = ExportManager.parseCSV(text);
             if (rows.length === 0) {
                 alert('CSVデータが空かフォーマットが不正です。');
                 return;
@@ -477,7 +571,7 @@ class ExportManager {
         reader.readAsText(file);
     }
 
-    parseCSV(text) {
+    static parseCSV(text) {
         const rows = [];
         let currentRow = [];
         let currentCell = '';
@@ -641,7 +735,7 @@ class HelpManager {
 class App {
     constructor() {
         // Collect inputs for state tracking
-        this.allInputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], textarea');
+        this.allInputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="color"], input[type="checkbox"], select, textarea');
         
         // Initialize Modules
         this.settings = new SettingsManager(this.allInputs);
@@ -665,16 +759,37 @@ class App {
     bindEvents() {
         // Update rendering and save on any input change
         this.allInputs.forEach(el => {
-            el.addEventListener('input', () => {
+            const onUpdate = () => {
                 this.renderer.update();
                 this.settings.save();
-            });
+            };
+            el.addEventListener('input', onUpdate);
+            el.addEventListener('change', onUpdate);
         });
 
         // Window resize updates the preview scaling
         window.addEventListener('resize', () => {
             this.renderer.scaleToFit();
         });
+
+        // Text Export/Import
+        const exportTextBtn = document.getElementById('export-text-btn');
+        if (exportTextBtn) {
+            exportTextBtn.addEventListener('click', () => {
+                this.settings.exportText();
+            });
+        }
+
+        const importTextInput = document.getElementById('import-text-input');
+        if (importTextInput) {
+            importTextInput.addEventListener('change', (e) => {
+                this.settings.importText(e.target.files[0], () => {
+                    this.renderer.update();
+                    this.settings.save();
+                    importTextInput.value = ''; // Reset file input
+                });
+            });
+        }
 
         // Preset Export/Import
         document.getElementById('export-preset-btn').addEventListener('click', () => {

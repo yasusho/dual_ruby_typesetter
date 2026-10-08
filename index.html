@@ -30,24 +30,50 @@
         <!-- Controls Panel (Right) -->
         <aside class="controls-panel">
             <div class="header-top">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="header-title-row">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <h2>上下ルビ組版ツール</h2>
                         <button id="help-btn" class="help-btn">?</button>
                     </div>
-                    <button id="export-png-btn" class="btn export small-btn">PNG出力</button>
-                </div>
-                <div class="header-actions">
                     <button id="load-local-fonts-btn" class="btn small-btn">PCフォント読込</button>
-                    <label class="btn export small-btn" style="cursor: pointer; margin: 0; background-color: #10b981; border-color: #10b981;">
-                        CSV一括出力
-                        <input type="file" id="batch-csv-input" accept=".csv" style="display: none;">
-                    </label>
-                    <button id="export-preset-btn" class="btn small-btn">設定保存</button>
-                    <label class="btn small-btn" style="cursor: pointer; margin: 0;">
-                        読込
-                        <input type="file" id="import-preset-input" accept=".json" style="display: none;">
-                    </label>
+                </div>
+                
+                <div class="action-grid">
+                    <!-- 画像出力グループ -->
+                    <div class="action-card">
+                        <span class="action-card-title">画像出力</span>
+                        <div class="btn-group">
+                            <button id="export-png-btn" class="btn export small-btn">PNG出力</button>
+                            <label class="btn export-csv small-btn" style="cursor: pointer; margin: 0;">
+                                CSV一括
+                                <input type="file" id="batch-csv-input" accept=".csv" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- テキスト管理グループ -->
+                    <div class="action-card">
+                        <span class="action-card-title">テキスト管理</span>
+                        <div class="btn-group">
+                            <button id="export-text-btn" class="btn small-btn">保存</button>
+                            <label class="btn small-btn" style="cursor: pointer; margin: 0;">
+                                読込
+                                <input type="file" id="import-text-input" accept=".json,.csv,.txt" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 設定管理グループ -->
+                    <div class="action-card">
+                        <span class="action-card-title">設定管理</span>
+                        <div class="btn-group">
+                            <button id="export-preset-btn" class="btn small-btn">保存</button>
+                            <label class="btn small-btn" style="cursor: pointer; margin: 0;">
+                                読込
+                                <input type="file" id="import-preset-input" accept=".json" style="display: none;">
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -66,7 +92,14 @@
 
                 <div class="control-group">
                     <h3>本文 ＆ 上ルビ (漢字)</h3>
-                    <p class="help-text">書式: <code>{本文|上ルビ}</code></p>
+                    <div class="inline-inputs" style="margin-bottom: 8px;">
+                        <label>ルビ記法
+                            <select id="ruby-syntax">
+                                <option value="curly">{本文|上ルビ}</option>
+                                <option value="pipe">|本文&lt;上ルビ&gt;</option>
+                            </select>
+                        </label>
+                    </div>
                     <label>テキスト
                         <textarea id="main-text" rows="4">{전화|戰火}의 불길 헤쳐 {미제|米帝}를 쳐부시고
 {조국|祖國}의 {존엄|尊厳}을 지켜주신 {수령|首領}님
@@ -165,7 +198,8 @@
             <div class="modal-body">
                 <h4>1. 基本の使い方</h4>
                 <p>各テキストエリアに文字を入力すると、左側のプレビューにリアルタイムで反映されます。<br>
-                本文の書き方: <code>{本文|上ルビ}</code> と記述することで、漢字の横に小さなルビを振ることができます。</p>
+                ルビの書き方は「<b>{本文|上ルビ}</b>」または「<b>|本文&lt;上ルビ&gt;</b>（例: <code>|振&lt;ふ&gt;り|仮名&lt;がな&gt;</code>）」を選択して切り替えることができます。</p>
+                <p>ヘッダーの「<b>テキスト保存</b>」ボタンを押すと、入力した本文・下ルビ・翻訳テキストをファイル（JSON）として保存できます。「<b>テキスト読込</b>」から保存したJSONやCSV、テキストファイルを読み込んで復元できます（※フォントなどの書式設定は保持されます）。</p>
                 <hr>
                 <h4>2. CSV一括出力</h4>
                 <p>大量のデータを一度に画像化したい場合は、CSVファイルを作成して読み込ませることができます。</p>
